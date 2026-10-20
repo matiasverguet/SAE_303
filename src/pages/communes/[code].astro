@@ -1,0 +1,95 @@
+---
+// Route C : une page statique par commune, générée au build.
+// Le lecteur peut arriver directement sur « sa » commune (lien partageable, référencé).
+import Layout from "../../layouts/Layout.astro";
+import EnTetePage from "../../components/EnTetePage.astro";
+import PlotFigure from "../../components/PlotFigure.astro";
+import { contours, indicateur } from "../../data/index.js";
+import { carteTaux, tauxMetropole, pct, nb, rangTexte } from "../../lib/charts.js";
+import { barre } from "../../lib/palette.js";
+
+export function getStaticPaths() {
+  return indicateur.map((d) => ({ params: { code: d.code }, props: { d } }));
+}
+
+const { d } = Astro.props;
+const ref = tauxMetropole(indicateur);
+const tri = [...indicateur].sort((a, b) => b.part - a.part);
+const rang = tri.findIndex((c) => c.code === d.code) + 1;
+const ecart = d.part - ref;
+const max = Math.max(...indicateur.map((c) => c.part));
+const ecartTexte = `${Math.abs(ecart).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} point${Math.abs(ecart) >= 2 ? "s" : ""}`;
+const parNom = [...indicateur].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+const i = parNom.findIndex((c) => c.code === d.code);
+const precedente = parNom[(i - 1 + parNom.length) % parNom.length];
+const suivante = parNom[(i + 1) % parNom.length];
+---
+
+<Layout titre={d.nom} description={`Risques à ${d.nom} (Bordeaux Métropole) : chiffres clés et comparaison avec la métropole.`}>
+  <EnTetePage surtitre={`Code INSEE ${d.code} · ${nb(d.population)} habitants`} titre={d.nom}>
+    <nav slot="avant" aria-label="Fil d'Ariane" class="mb-6 text-sm">
+      <a href="/communes/">Les 28 communes</a> <span class="text-gris" aria-hidden="true">/</span>{" "}
+      <span aria-current="page" class="text-gris">{d.nom}</span>
+    </nav>
+    <p>
+      Sur 100 habitants de {d.nom}, environ {d.part.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} vivent dans
+      une zone exposée : {ecartTexte} {ecart >= 0 ? "de plus" : "de moins"} que pour l'ensemble de la métropole.
+    </p>
+  </EnTetePage>
+
+  <dl class="mt-10 grid gap-3 sm:grid-cols-3 sm:gap-4">
+    <div data-revele class="rounded-2xl border border-filet bg-voile p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50">
+      <dt class="text-sm text-gris">Habitants exposés</dt>
+      <dd class="condense mt-2 text-5xl font-extrabold tabular-nums" data-compte={d.exposes}>{nb(d.exposes)}</dd>
+      <dd class="mt-1 text-sm text-gris">sur {nb(d.population)}</dd>
+    </div>
+    <div data-revele data-delai="100" class="rounded-2xl border border-filet bg-voile p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50">
+      <dt class="text-sm text-gris">Part de la population</dt>
+      <dd class="condense mt-2 text-5xl font-extrabold tabular-nums" data-compte={d.part} data-decimales="1" data-suffixe=" %">{pct(d.part)}</dd>
+      <dd class="mt-1 text-sm text-gris">{ecart >= 0 ? "+" : "−"}{ecartTexte} par rapport à la métropole ({pct(ref)})</dd>
+    </div>
+    <div data-revele data-delai="200" class="rounded-2xl border border-filet bg-voile p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50">
+      <dt class="text-sm text-gris">Rang parmi les 28 communes</dt>
+      <dd class="condense mt-2 text-5xl font-extrabold tabular-nums" set:html={rangTexte(rang)} />
+      <dd class="mt-1 text-sm text-gris">1<sup>re</sup> = la plus exposée</dd>
+    </div>
+  </dl>
+
+  <!-- Jauge : la commune face à la métropole, sur la même échelle (0 → commune la plus exposée) -->
+  <figure data-revele class="mt-4 rounded-2xl border border-filet bg-voile p-6">
+    <figcaption class="text-sm text-gris">
+      {d.nom} ({pct(d.part)}) comparée à l'ensemble de la métropole ({pct(ref)}), sur une échelle allant de 0 à la commune la plus exposée ({pct(max)}).
+    </figcaption>
+    <div class="relative mt-8 mb-6 h-3 rounded-full bg-papier" aria-hidden="true">
+      <div class="h-full origin-left animate-grandit rounded-full [animation-delay:300ms]" style={`width:${(d.part / max) * 100}%;background:${barre}`}></div>
+      <div class="absolute -top-2 h-7 w-0.5 bg-encre" style={`left:${(ref / max) * 100}%`}>
+        <span class="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-xs whitespace-nowrap text-encre">Métropole</span>
+      </div>
+    </div>
+  </figure>
+
+  <div class="mt-4">
+    <PlotFigure
+      id="carte-commune"
+      titre={`${d.nom} dans la métropole`}
+      sousTitre="Part de la population exposée, en % de la population municipale, par commune. La commune de la fiche est entourée."
+      consigne="Cliquez sur une autre commune pour ouvrir sa fiche"
+      interactif
+      source="Données provisoires (à remplacer par l'export du notebook) · Contours : IGN, via geo.api.gouv.fr"
+      alt={`Carte des 28 communes de Bordeaux Métropole colorées selon la part de population exposée ; ${d.nom} est entourée. Elle est classée ${rang === 1 ? "1re" : rang + "e"} sur 28, avec ${pct(d.part)} contre ${pct(ref)} pour la métropole. Chaque commune est un lien vers sa fiche.`}
+      render={(document) => carteTaux(contours, indicateur, { document, selection: d.code, lien: (code) => `/communes/${code}/` })}
+    />
+  </div>
+
+  <nav aria-label="Autres communes" class="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+    <a href={`/communes/${precedente.code}/`} class="group rounded-2xl border border-filet bg-voile p-5 no-underline transition duration-300 hover:-translate-y-1 hover:border-cobalt/50">
+      <span class="block text-sm text-gris"><span class="inline-block transition-transform group-hover:-translate-x-1">←</span> Précédente</span>
+      <span class="mt-1 block font-semibold text-encre group-hover:text-cobalt">{precedente.nom}</span>
+    </a>
+    <a href={`/communes/${suivante.code}/`} class="group rounded-2xl border border-filet bg-voile p-5 text-right no-underline transition duration-300 hover:-translate-y-1 hover:border-cobalt/50">
+      <span class="block text-sm text-gris">Suivante <span class="inline-block transition-transform group-hover:translate-x-1">→</span></span>
+      <span class="mt-1 block font-semibold text-encre group-hover:text-cobalt">{suivante.nom}</span>
+    </a>
+  </nav>
+  <p class="mt-8"><a href="/#conclusion">Revenir au récit</a></p>
+</Layout>

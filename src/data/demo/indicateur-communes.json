@@ -1,0 +1,198 @@
+[
+ {
+  "code": "33003",
+  "nom": "Ambarès-et-Lagrave",
+  "population": 17644,
+  "exposes": 355,
+  "part": 2.01
+ },
+ {
+  "code": "33004",
+  "nom": "Ambès",
+  "population": 3313,
+  "exposes": 727,
+  "part": 21.94
+ },
+ {
+  "code": "33013",
+  "nom": "Artigues-près-Bordeaux",
+  "population": 8687,
+  "exposes": 2601,
+  "part": 29.94
+ },
+ {
+  "code": "33032",
+  "nom": "Bassens",
+  "population": 8435,
+  "exposes": 1013,
+  "part": 12.01
+ },
+ {
+  "code": "33039",
+  "nom": "Bègles",
+  "population": 31831,
+  "exposes": 5187,
+  "part": 16.3
+ },
+ {
+  "code": "33056",
+  "nom": "Blanquefort",
+  "population": 17215,
+  "exposes": 1628,
+  "part": 9.46
+ },
+ {
+  "code": "33063",
+  "nom": "Bordeaux",
+  "population": 267991,
+  "exposes": 104739,
+  "part": 39.08
+ },
+ {
+  "code": "33065",
+  "nom": "Bouliac",
+  "population": 3804,
+  "exposes": 817,
+  "part": 21.48
+ },
+ {
+  "code": "33069",
+  "nom": "Le Bouscat",
+  "population": 25081,
+  "exposes": 5557,
+  "part": 22.16
+ },
+ {
+  "code": "33075",
+  "nom": "Bruges",
+  "population": 20020,
+  "exposes": 2356,
+  "part": 11.77
+ },
+ {
+  "code": "33096",
+  "nom": "Carbon-Blanc",
+  "population": 8331,
+  "exposes": 506,
+  "part": 6.07
+ },
+ {
+  "code": "33119",
+  "nom": "Cenon",
+  "population": 26834,
+  "exposes": 8852,
+  "part": 32.99
+ },
+ {
+  "code": "33162",
+  "nom": "Eysines",
+  "population": 24825,
+  "exposes": 8992,
+  "part": 36.22
+ },
+ {
+  "code": "33167",
+  "nom": "Floirac",
+  "population": 18300,
+  "exposes": 3509,
+  "part": 19.17
+ },
+ {
+  "code": "33192",
+  "nom": "Gradignan",
+  "population": 26952,
+  "exposes": 3052,
+  "part": 11.32
+ },
+ {
+  "code": "33200",
+  "nom": "Le Haillan",
+  "population": 11392,
+  "exposes": 1299,
+  "part": 11.4
+ },
+ {
+  "code": "33249",
+  "nom": "Lormont",
+  "population": 25769,
+  "exposes": 2359,
+  "part": 9.15
+ },
+ {
+  "code": "33273",
+  "nom": "Martignas-sur-Jalle",
+  "population": 8056,
+  "exposes": 1151,
+  "part": 14.29
+ },
+ {
+  "code": "33281",
+  "nom": "Mérignac",
+  "population": 78090,
+  "exposes": 4632,
+  "part": 5.93
+ },
+ {
+  "code": "33312",
+  "nom": "Parempuyre",
+  "population": 10672,
+  "exposes": 3488,
+  "part": 32.68
+ },
+ {
+  "code": "33318",
+  "nom": "Pessac",
+  "population": 67339,
+  "exposes": 15022,
+  "part": 22.31
+ },
+ {
+  "code": "33376",
+  "nom": "Saint-Aubin-de-Médoc",
+  "population": 7769,
+  "exposes": 2648,
+  "part": 34.08
+ },
+ {
+  "code": "33434",
+  "nom": "Saint-Louis-de-Montferrand",
+  "population": 2051,
+  "exposes": 615,
+  "part": 29.99
+ },
+ {
+  "code": "33449",
+  "nom": "Saint-Médard-en-Jalles",
+  "population": 32910,
+  "exposes": 1638,
+  "part": 4.98
+ },
+ {
+  "code": "33487",
+  "nom": "Saint-Vincent-de-Paul",
+  "population": 1067,
+  "exposes": 240,
+  "part": 22.49
+ },
+ {
+  "code": "33519",
+  "nom": "Le Taillan-Médoc",
+  "population": 11073,
+  "exposes": 773,
+  "part": 6.98
+ },
+ {
+  "code": "33522",
+  "nom": "Talence",
+  "population": 46338,
+  "exposes": 16114,
+  "part": 34.77
+ },
+ {
+  "code": "33550",
+  "nom": "Villenave-d'Ornon",
+  "population": 42545,
+  "exposes": 8362,
+  "part": 19.65
+ }
+]

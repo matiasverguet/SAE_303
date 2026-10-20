@@ -1,0 +1,251 @@
+---
+import { Image } from "astro:assets";
+import photoBordeaux from "../assets/hero-bordeaux.jpg";
+import Layout from "../layouts/Layout.astro";
+import Chapitre from "../components/Chapitre.astro";
+import PlotFigure from "../components/PlotFigure.astro";
+import ExplorateurCommune from "../components/ExplorateurCommune.astro";
+import SceneSoleil from "../components/SceneSoleil.astro";
+import { communes, contours, indicateur } from "../data/index.js";
+import { carteTaux, barresCommunes, tauxMetropole, pct } from "../lib/charts.js";
+
+// Chiffres de contexte réels (référentiel INSEE via geo.api.gouv.fr)
+const populationTotale = communes.reduce((s, c) => s + c.population, 0);
+const ref = tauxMetropole(indicateur);
+const SOURCE = "Données provisoires (à remplacer par l'export du notebook) · Contours : IGN, via geo.api.gouv.fr";
+
+const etapes = [
+  { id: "contexte", n: "01", label: "Contexte" },
+  { id: "exploration", n: "02", label: "Exploration" },
+  { id: "revelation", n: "03", label: "Révélation" },
+  { id: "conclusion", n: "04", label: "Conclusion" },
+];
+
+// Chiffres clés : la valeur finale est écrite dans la page, le compteur l'anime à l'écran
+const chiffres = [
+  { valeur: populationTotale, texte: populationTotale.toLocaleString("fr-FR"), label: "habitants dans la métropole" },
+  { valeur: communes.length, texte: String(communes.length), label: "communes" },
+  { valeur: 32000, texte: "32 000", label: "hectares brûlés en Gironde en 2022" },
+  { valeur: 20, texte: "20 cm", suffixe: " cm", label: "d'élévation du niveau marin déjà constatée" },
+];
+
+const composantes = [
+  { terme: "Aléa", texte: "Où et à quelle fréquence le phénomène se produit." },
+  { terme: "× Enjeu", texte: "Qui et quoi se trouve sur son passage." },
+  { terme: "× Vulnérabilité", texte: "Qui aura le plus de mal à s'en protéger." },
+];
+
+const gestes = [
+  {
+    titre: "Connaître les risques à son adresse",
+    texte: "Le service public Géorisques liste les risques connus pour n'importe quelle adresse.",
+    lien: { href: "https://www.georisques.gouv.fr/mes-risques", label: "Ouvrir Géorisques" },
+  },
+  {
+    titre: "Lire le DICRIM de sa commune",
+    texte: "Le document d'information communal sur les risques majeurs explique les consignes locales. Il est consultable en mairie.",
+  },
+  {
+    titre: "Savoir comment l'alerte arrive",
+    texte: "En cas de danger, FR-Alert envoie une notification sur les téléphones présents dans la zone, sans inscription.",
+    lien: { href: "https://www.fr-alert.gouv.fr/", label: "Découvrir FR-Alert" },
+  },
+];
+---
+
+<Layout>
+  <!-- EN-TÊTE : scène 3D, le soleil passe au-dessus des 28 communes -->
+  <header slot="hero" class="relative isolate overflow-hidden border-b border-filet bg-nuit">
+    <!-- Ciel étoilé discret -->
+    <div class="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(1px_1px_at_12%_18%,#fff6,transparent),radial-gradient(1px_1px_at_32%_8%,#fff5,transparent),radial-gradient(1px_1px_at_58%_22%,#fff4,transparent),radial-gradient(1px_1px_at_78%_12%,#fff6,transparent),radial-gradient(1px_1px_at_88%_32%,#fff3,transparent),radial-gradient(1px_1px_at_6%_42%,#fff4,transparent)]" aria-hidden="true"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-papier to-transparent" aria-hidden="true"></div>
+
+    <div class="mx-auto grid max-w-6xl items-center gap-6 px-4 pt-10 pb-16 sm:px-6 lg:min-h-[82vh] lg:grid-cols-[1.05fr_1fr] lg:gap-4 lg:pt-6">
+      <div class="order-2 lg:order-1">
+        <p class="surtitre animate-monte text-cobalt">Bordeaux Métropole · 28 communes</p>
+        <h1 class="condense mt-4 animate-monte text-5xl leading-[0.9] font-black uppercase [animation-delay:150ms] sm:text-7xl lg:text-[5.6rem]">
+          Les risques qui pèsent sur votre commune
+        </h1>
+        <p class="texte mt-6 max-w-xl animate-monte text-encre/85 [animation-delay:300ms]">
+          Inondations, canicules, incendies, sites industriels : ils ne frappent pas tout le monde de la même façon.
+          Où sont les dangers, qui y est exposé, et comment s'y préparer ? Réponses avec les données publiques.
+        </p>
+        <nav aria-label="Étapes du récit" class="mt-10 animate-monte [animation-delay:450ms]">
+          <ol class="flex flex-wrap gap-3 text-[0.9375rem] font-medium">
+            {
+              etapes.map((e) => (
+                <li>
+                  <a
+                    href={`#${e.id}`}
+                    class="inline-flex items-center gap-2 rounded-full border border-encre/20 bg-voile/60 px-4 py-2 text-encre no-underline backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-cobalt hover:text-cobalt"
+                  >
+                    <span class="text-cobalt tabular-nums">{e.n}</span> {e.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </nav>
+      </div>
+      <div class="order-1 animate-apparait [animation-duration:1.4s] lg:order-2">
+        <SceneSoleil />
+      </div>
+    </div>
+  </header>
+
+  <!-- CHIFFRES CLÉS -->
+  <section id="chiffres" aria-label="Chiffres clés" class="scroll-mt-24 pt-10">
+    <dl class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {
+        chiffres.map((c, i) => (
+          <div
+            data-revele
+            data-delai={i * 100}
+            class="rounded-2xl border border-filet bg-voile p-5 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50 sm:p-6"
+          >
+            <dt class="text-sm text-gris">{c.label}</dt>
+            <dd class="condense mt-2 text-4xl font-extrabold tabular-nums sm:text-5xl" data-compte={c.valeur} data-suffixe={c.suffixe}>
+              {c.texte}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="mt-3 text-xs text-gris">
+      Sources : INSEE via geo.api.gouv.fr (population) ; Bordeaux Métropole,
+      <a href="https://defis.data.gouv.fr/defis/prevention-des-risques-a-bordeaux-metropole">présentation du défi</a>{" "}
+      (incendies, niveau marin).
+    </p>
+  </section>
+
+  <!-- 01 · CONTEXTE -->
+  <!-- TITRE PORTEUR : à remplacer par le constat qui ouvre le récit -->
+  <Chapitre id="contexte" numero="01" etape="Contexte" titre="Un territoire déjà rattrapé par les crises">
+    <div data-revele class="texte mt-8 max-w-2xl space-y-5">
+      <p>
+        L'été 2022, les incendies de Gironde ont parcouru 32&nbsp;000 hectares. Sur la métropole, les canicules se
+        multiplient, les pluies d'hiver deviennent plus intenses et la Garonne, poussée par un niveau marin plus haut,
+        déborde plus souvent. En juin 2025, Bordeaux Métropole a adopté un plan de résilience pour y faire face.
+      </p>
+      <p>
+        Mais un danger n'est pas encore un risque. Les spécialistes le décomposent en trois termes&nbsp;: l'<strong>aléa</strong>{" "}
+        (la crue, la vague de chaleur), l'<strong>enjeu</strong> (les personnes, logements, écoles qui s'y trouvent) et
+        la <strong>vulnérabilité</strong> (la capacité de chacun à y faire face).
+      </p>
+    </div>
+    <figure data-revele class="mt-12 overflow-hidden rounded-2xl border border-filet bg-voile">
+      <Image
+        src={photoBordeaux}
+        alt="Vue aérienne de l'agglomération bordelaise en été : quartiers, zones d'activité et la Garonne"
+        widths={[640, 1024, 1600]}
+        sizes="(min-width: 1152px) 920px, 100vw"
+        class="aspect-[21/9] w-full object-cover transition-transform duration-[1.5s] ease-out hover:scale-[1.03]"
+      />
+      <figcaption class="flex flex-wrap justify-between gap-2 px-5 py-3 text-xs text-gris">
+        <span>L'agglomération bordelaise et la Garonne, vues d'avion un après-midi de septembre.</span>
+        <span>
+          Photo : <a href="https://commons.wikimedia.org/wiki/File:Bordeaux_(France).jpg">sky_hlv</a>,{" "}
+          <a href="https://creativecommons.org/licenses/by/2.0/deed.fr">CC BY 2.0</a>
+        </span>
+      </figcaption>
+    </figure>
+    <ul class="mt-10 grid max-w-4xl gap-3 sm:grid-cols-3" aria-label="Les trois composantes du risque">
+      {
+        composantes.map((c, i) => (
+          <li
+            data-revele
+            data-delai={i * 120}
+            class="group rounded-2xl border border-filet bg-voile p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50"
+          >
+            <p class="condense text-3xl font-extrabold transition-colors group-hover:text-cobalt">{c.terme}</p>
+            <p class="mt-2 text-sm text-gris">{c.texte}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Chapitre>
+
+  <!-- 02 · EXPLORATION -->
+  <!-- TITRE PORTEUR : à remplacer par le constat de la carte -->
+  <Chapitre id="exploration" numero="02" etape="Exploration" titre="Où vit-on le plus exposé ?">
+    <div data-revele class="texte mt-8 max-w-2xl space-y-5">
+      <p>
+        Compter les habitants exposés avantagerait mécaniquement les grandes communes : Bordeaux aura toujours plus de
+        monde concerné qu'Ambès. La carte montre donc une <strong>part</strong> : sur 100 habitants de la commune,
+        combien vivent dans une zone exposée.
+      </p>
+    </div>
+    <PlotFigure
+      id="v2-carte"
+      numero="Fig. 1"
+      titre="Part de la population exposée, commune par commune"
+      sousTitre="En % de la population municipale. Plus la couleur est claire et chaude, plus la part d'habitants exposés est élevée."
+      consigne="Survolez une commune pour lire sa valeur, cliquez pour ouvrir sa fiche"
+      interactif
+      source={SOURCE}
+      alt="Carte des 28 communes de Bordeaux Métropole, colorées en cinq classes, du brun sombre (part faible) au jaune clair (part forte), selon la part de leur population exposée. Chaque commune est un lien vers sa fiche. Les valeurs fortes et faibles seront décrites une fois les données définitives intégrées."
+      render={(document) => carteTaux(contours, indicateur, { document, lien: (code) => `/communes/${code}/` })}
+    />
+  </Chapitre>
+
+  <!-- 03 · RÉVÉLATION -->
+  <!-- TITRE PORTEUR : à remplacer par le constat qui surprend -->
+  <Chapitre id="revelation" numero="03" etape="Révélation" titre="Quelles communes dépassent la moyenne ?">
+    <div data-revele class="texte mt-8 max-w-2xl space-y-5">
+      <p>
+        Classées de la plus à la moins exposée, les communes se lisent par rapport à une référence : le taux de
+        l'ensemble de la métropole (ligne pointillée), calculé sur tous ses habitants.
+      </p>
+    </div>
+    <PlotFigure
+      id="v3-comparaison"
+      numero="Fig. 2"
+      titre="Les 28 communes classées selon la part d'habitants exposés"
+      sousTitre={`En % de la population municipale. Ligne pointillée : taux de la métropole entière (${pct(ref)}).`}
+      source={SOURCE}
+      alt="Diagramme en barres horizontales des 28 communes classées de la plus exposée à la moins exposée, avec une ligne pointillée pour le taux métropolitain. Les communes extrêmes seront nommées une fois les données définitives intégrées."
+      defilable
+      barresSurvol
+      consigne="Survolez une barre pour la mettre en évidence"
+      render={(document) => barresCommunes(indicateur, { document })}
+    />
+  </Chapitre>
+
+  <!-- 04 · CONCLUSION -->
+  <Chapitre id="conclusion" numero="04" etape="Conclusion" titre="Et chez vous ?">
+    <div data-revele class="texte mt-8 max-w-2xl">
+      <p>Choisissez votre commune pour la situer par rapport au reste de la métropole.</p>
+    </div>
+
+    <div class="mt-8">
+      <ExplorateurCommune source={SOURCE} />
+    </div>
+
+    <div class="mt-20">
+      <h3 data-revele class="condense text-3xl font-extrabold sm:text-4xl">Se préparer, concrètement</h3>
+      <ol class="mt-8 grid gap-4 sm:grid-cols-3">
+        {
+          gestes.map((g, i) => (
+            <li
+              data-revele
+              data-delai={i * 120}
+              class="group flex flex-col rounded-2xl border border-filet bg-voile p-6 transition duration-300 hover:-translate-y-1 hover:border-cobalt/50"
+            >
+              <p class="condense contour text-6xl leading-none font-black" aria-hidden="true">{i + 1}</p>
+              <p class="mt-4 font-bold">{g.titre}</p>
+              <p class="mt-2 flex-1 text-[0.9375rem] text-gris">{g.texte}</p>
+              {
+                g.lien && (
+                  <a href={g.lien.href} class="mt-4 inline-flex items-center gap-1 text-sm font-semibold no-underline">
+                    {g.lien.label}
+                    <span class="transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+                  </a>
+                )
+              }
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </Chapitre>
+</Layout>
