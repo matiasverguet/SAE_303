@@ -1,18 +1,18 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import EnTetePage from "../../components/EnTetePage.astro";
-import { indicateur } from "../../data/index.js";
+import communes from "../../assets/communes.json";
 import { pct, nb, tauxMetropole } from "../../lib/charts.js";
 import { barre } from "../../lib/palette.js";
 
-const liste = [...indicateur].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
-const max = Math.max(...indicateur.map((d) => d.part));
-const ref = tauxMetropole(indicateur);
+const liste = [...communes].sort((a, b) => a.commune.localeCompare(b.commune, "fr"));
+const max = Math.max(...communes.map((d) => d.part_ind));
+const ref = tauxMetropole(communes);
 // Nom sans accents ni tirets, pour que « saint medard » trouve « Saint-Médard-en-Jalles »
 const cle = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[-']/g, " ").toLowerCase();
 ---
 
-<Layout titre="Les 28 communes" description="Une fiche pour chacune des 28 communes de Bordeaux Métropole.">
+<Layout titre="Les 28 communes" description="La part des habitants vivant en îlot de chaleur dans chacune des 28 communes de Bordeaux Métropole.">
   <EnTetePage surtitre="Fiches communales" titre="Les 28 communes">
     <p>Trouvez votre commune pour ouvrir sa fiche et la comparer au reste de la métropole.</p>
   </EnTetePage>
@@ -43,46 +43,56 @@ const cle = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[
       </button>
     </div>
   </div>
+  <div data-revele class="mt-4 flex flex-wrap items-center gap-3 text-sm">
+    <label for="aller-commune" class="font-semibold text-gris">Ou aller directement à sa fiche :</label>
+    <select
+      id="aller-commune"
+      class="cursor-pointer rounded-xl border border-filet bg-voile px-3 py-2 text-encre transition hover:border-cobalt focus:border-cobalt focus:ring-4 focus:ring-cobalt/25 focus:outline-none"
+    >
+      <option value="">Choisir une commune</option>
+      {liste.map((d) => <option value={d.insee}>{d.commune}</option>)}
+    </select>
+  </div>
   <p data-compte-resultat aria-live="polite" class="mt-4 text-sm text-gris">28 communes</p>
 
   <div data-revele class="mt-3 overflow-hidden rounded-2xl border border-filet bg-voile">
     <table class="w-full border-collapse text-left">
       <caption class="sr-only">
-        Les 28 communes de Bordeaux Métropole avec leur population et la part d'habitants exposés
+        Les 28 communes de Bordeaux Métropole avec leur nombre d'habitants et la part vivant en îlot de chaleur
       </caption>
       <thead>
         <tr class="border-b border-filet text-sm text-gris">
           <th scope="col" class="px-4 py-3 font-semibold sm:px-6">Commune</th>
           <th scope="col" class="hidden px-4 py-3 text-right font-semibold sm:table-cell">Habitants</th>
-          <th scope="col" class="px-4 py-3 font-semibold sm:pr-6">Part exposée <span class="font-normal">(métropole : {pct(ref)})</span></th>
+          <th scope="col" class="px-4 py-3 font-semibold sm:pr-6">En îlot de chaleur <span class="font-normal">(métropole : {pct(ref)})</span></th>
         </tr>
       </thead>
       <tbody data-liste>
         {
           liste.map((d, i) => (
             <tr
-              data-nom={cle(d.nom)}
-              data-part={d.part}
+              data-nom={cle(d.commune)}
+              data-part={d.part_ind}
               data-ordre={i}
               class="group relative border-b border-filet transition-colors last:border-0 hover:bg-cobalt-voile"
             >
               <th scope="row" class="px-4 py-3.5 font-semibold sm:px-6">
                 <!-- Le lien couvre toute la ligne (after:absolute) : un clic n'importe où ouvre la fiche -->
                 <a
-                  href={`/communes/${d.code}/`}
+                  href={`/communes/${d.insee}/`}
                   class="text-encre no-underline after:absolute after:inset-0 group-hover:text-cobalt"
                 >
-                  {d.nom}
+                  {d.commune}
                 </a>
               </th>
-              <td class="hidden px-4 py-3.5 text-right text-gris tabular-nums sm:table-cell">{nb(d.population)}</td>
+              <td class="hidden px-4 py-3.5 text-right text-gris tabular-nums sm:table-cell">{nb(d.ind)}</td>
               <td class="px-4 py-3.5 sm:pr-6">
                 <div class="flex items-center gap-3">
-                  <span class="w-14 shrink-0 text-right tabular-nums">{pct(d.part)}</span>
+                  <span class="w-14 shrink-0 text-right tabular-nums">{pct(d.part_ind)}</span>
                   <span class="hidden h-2 flex-1 overflow-hidden rounded-full bg-papier sm:block" aria-hidden="true">
                     <span
                       class="block h-full origin-left animate-grandit rounded-full"
-                      style={`width:${(d.part / max) * 100}%;background:${barre};animation-delay:${200 + i * 30}ms`}
+                      style={`width:${(d.part_ind / max) * 100}%;background:${barre};animation-delay:${200 + i * 30}ms`}
                     />
                   </span>
                   <span class="text-gris transition-transform group-hover:translate-x-1 group-hover:text-cobalt" aria-hidden="true">→</span>
@@ -134,4 +144,10 @@ const cle = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[
     if (visibles.length === 1) visibles[0].querySelector("a")!.click();
   });
   boutons.forEach((b) => b.addEventListener("click", () => trier(b.dataset.tri!)));
+
+  // Menu déroulant : ouvre la fiche de la commune choisie (comme au TP3, avec un / final pour Netlify)
+  document.querySelector("#aller-commune")?.addEventListener("change", (evt) => {
+    const valeur = (evt.target as HTMLSelectElement).value;
+    if (valeur) location.pathname = "/communes/" + valeur + "/";
+  });
 </script>

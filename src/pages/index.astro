@@ -6,13 +6,22 @@ import Chapitre from "../components/Chapitre.astro";
 import PlotFigure from "../components/PlotFigure.astro";
 import ExplorateurCommune from "../components/ExplorateurCommune.astro";
 import SceneSoleil from "../components/SceneSoleil.astro";
-import { communes, contours, indicateur } from "../data/index.js";
-import { carteTaux, barresCommunes, tauxMetropole, pct } from "../lib/charts.js";
+// Données : export du notebook Observable (une ligne par commune) + contours de Bordeaux Métropole
+import communes from "../assets/communes.json";
+import contours from "../assets/communes-contours.json";
+import { carteTaux, comparaison80, tauxMetropole, pct } from "../lib/charts.js";
 
-// Chiffres de contexte réels (référentiel INSEE via geo.api.gouv.fr)
-const populationTotale = communes.reduce((s, c) => s + c.population, 0);
-const ref = tauxMetropole(indicateur);
-const SOURCE = "Données provisoires (à remplacer par l'export du notebook) · Contours : IGN, via geo.api.gouv.fr";
+const populationTotale = communes.reduce((s, c) => s + c.ind, 0);
+const ref = tauxMetropole(communes);
+const tri = [...communes].sort((a, b) => b.part_ind - a.part_ind);
+// Les 80 ans et plus sur toute la métropole : total ÷ total
+const part80Metro = (communes.reduce((s, c) => s + c.ind_80p_icu, 0) / communes.reduce((s, c) => s + c.ind_80p, 0)) * 100;
+const ecarts = [...communes].sort((a, b) => b.ecart_80p - a.ecart_80p);
+const nb80PlusExposes = communes.filter((d) => d.ecart_80p > 0).length;
+// Ménages pauvres et ensemble des ménages, sur toute la métropole : total ÷ total
+const partPauvresMetro = (communes.reduce((s, c) => s + c.men_pauv_icu, 0) / communes.reduce((s, c) => s + c.men_pauv, 0)) * 100;
+const partMenagesMetro = (communes.reduce((s, c) => s + c.men_icu, 0) / communes.reduce((s, c) => s + c.men, 0)) * 100;
+const SOURCE = "Bordeaux Métropole (îlots de chaleur, relevé satellite du 11 juillet 2022) · Insee, Filosofi 2019 (carreaux de 200 m) · Contours : Bordeaux Métropole";
 
 const etapes = [
   { id: "contexte", n: "01", label: "Contexte" },
@@ -23,32 +32,32 @@ const etapes = [
 
 // Chiffres clés : la valeur finale est écrite dans la page, le compteur l'anime à l'écran
 const chiffres = [
-  { valeur: populationTotale, texte: populationTotale.toLocaleString("fr-FR"), label: "habitants dans la métropole" },
-  { valeur: communes.length, texte: String(communes.length), label: "communes" },
-  { valeur: 32000, texte: "32 000", label: "hectares brûlés en Gironde en 2022" },
-  { valeur: 20, texte: "20 cm", suffixe: " cm", label: "d'élévation du niveau marin déjà constatée" },
+  { valeur: Math.round(populationTotale), texte: Math.round(populationTotale).toLocaleString("fr-FR"), label: "habitants dans la métropole (Insee, Filosofi 2019)" },
+  { valeur: 9697, texte: "9 697", label: "zones à +3 °C ou plus au-dessus de la moyenne, le 11 juillet 2022" },
+  { valeur: Math.round(ref), texte: `${Math.round(ref)} %`, suffixe: " %", label: "des habitants vivent dans un îlot de chaleur" },
+  { valeur: Math.round(part80Metro), texte: `${Math.round(part80Metro)} %`, suffixe: " %", label: "des 80 ans et plus aussi" },
 ];
 
 const composantes = [
-  { terme: "Aléa", texte: "Où et à quelle fréquence le phénomène se produit." },
-  { terme: "× Enjeu", texte: "Qui et quoi se trouve sur son passage." },
-  { terme: "× Vulnérabilité", texte: "Qui aura le plus de mal à s'en protéger." },
+  { terme: "Aléa", texte: "Les îlots de chaleur : les zones à +3 °C ou plus au-dessus de la moyenne de la métropole." },
+  { terme: "× Enjeu", texte: "Les habitants qui y vivent, commune par commune." },
+  { terme: "× Vulnérabilité", texte: "Les plus fragiles face à la chaleur : les 80 ans et plus, les ménages pauvres." },
 ];
 
 const gestes = [
   {
-    titre: "Connaître les risques à son adresse",
-    texte: "Le service public Géorisques liste les risques connus pour n'importe quelle adresse.",
-    lien: { href: "https://www.georisques.gouv.fr/mes-risques", label: "Ouvrir Géorisques" },
+    titre: "Suivre la vigilance canicule",
+    texte: "Météo-France publie chaque jour la carte de vigilance, avec les consignes à suivre en cas de forte chaleur.",
+    lien: { href: "https://vigilance.meteofrance.fr/", label: "Voir la vigilance" },
   },
   {
-    titre: "Lire le DICRIM de sa commune",
-    texte: "Le document d'information communal sur les risques majeurs explique les consignes locales. Il est consultable en mairie.",
+    titre: "S'inscrire au registre de sa mairie",
+    texte: "Les personnes âgées ou fragiles peuvent s'inscrire auprès de leur mairie (CCAS) pour être contactées pendant une canicule.",
   },
   {
-    titre: "Savoir comment l'alerte arrive",
-    texte: "En cas de danger, FR-Alert envoie une notification sur les téléphones présents dans la zone, sans inscription.",
-    lien: { href: "https://www.fr-alert.gouv.fr/", label: "Découvrir FR-Alert" },
+    titre: "Repérer les lieux frais près de chez soi",
+    texte: "Bordeaux Métropole recense les parcs, piscines, bibliothèques et autres lieux frais ou rafraîchis.",
+    lien: { href: "https://geo.bordeaux-metropole.fr/adws/app/33cebc9f-cd8e-11ed-ad24-9bf3b515cd35/", label: "Ouvrir la carte" },
   },
 ];
 ---
@@ -62,13 +71,14 @@ const gestes = [
 
     <div class="mx-auto grid max-w-6xl items-center gap-6 px-4 pt-10 pb-16 sm:px-6 lg:min-h-[82vh] lg:grid-cols-[1.05fr_1fr] lg:gap-4 lg:pt-6">
       <div class="order-2 lg:order-1">
-        <p class="surtitre animate-monte text-cobalt">Bordeaux Métropole · 28 communes</p>
+        <p class="surtitre animate-monte text-cobalt">Bordeaux Métropole · Chaleur en ville</p>
         <h1 class="condense mt-4 animate-monte text-5xl leading-[0.9] font-black uppercase [animation-delay:150ms] sm:text-7xl lg:text-[5.6rem]">
-          Les risques qui pèsent sur votre commune
+          {Math.round(ref)} % des habitants vivent dans un îlot de chaleur
         </h1>
         <p class="texte mt-6 max-w-xl animate-monte text-encre/85 [animation-delay:300ms]">
-          Inondations, canicules, incendies, sites industriels : ils ne frappent pas tout le monde de la même façon.
-          Où sont les dangers, qui y est exposé, et comment s'y préparer ? Réponses avec les données publiques.
+          Pendant une vague de chaleur, certains quartiers chauffent bien plus que d'autres. Où sont-ils, combien
+          d'habitants y vivent, et les plus fragiles y sont-ils plus nombreux&nbsp;? Réponses commune par commune, avec
+          les données publiques de Bordeaux Métropole et de l'Insee.
         </p>
         <nav aria-label="Étapes du récit" class="mt-10 animate-monte [animation-delay:450ms]">
           <ol class="flex flex-wrap gap-3 text-[0.9375rem] font-medium">
@@ -112,25 +122,23 @@ const gestes = [
       }
     </dl>
     <p class="mt-3 text-xs text-gris">
-      Sources : INSEE via geo.api.gouv.fr (population) ; Bordeaux Métropole,
-      <a href="https://defis.data.gouv.fr/defis/prevention-des-risques-a-bordeaux-metropole">présentation du défi</a>{" "}
-      (incendies, niveau marin).
+      Sources : {SOURCE}.
     </p>
   </section>
 
   <!-- 01 · CONTEXTE -->
-  <!-- TITRE PORTEUR : à remplacer par le constat qui ouvre le récit -->
-  <Chapitre id="contexte" numero="01" etape="Contexte" titre="Un territoire déjà rattrapé par les crises">
+  <Chapitre id="contexte" numero="01" etape="Contexte" titre="Le 11 juillet 2022, près d'un tiers de la métropole était au moins 3 °C plus chaud que la moyenne">
     <div data-revele class="texte mt-8 max-w-2xl space-y-5">
       <p>
-        L'été 2022, les incendies de Gironde ont parcouru 32&nbsp;000 hectares. Sur la métropole, les canicules se
-        multiplient, les pluies d'hiver deviennent plus intenses et la Garonne, poussée par un niveau marin plus haut,
-        déborde plus souvent. En juin 2025, Bordeaux Métropole a adopté un plan de résilience pour y faire face.
+        Bordeaux Métropole voit les canicules se multiplier ; en juin 2025, elle a adopté un plan de résilience pour y
+        faire face. Mais une vague de chaleur ne frappe pas partout pareil : le 11 juillet 2022, un satellite a mesuré la
+        température de surface de toute la métropole. Environ 31&nbsp;% de sa surface était à <strong>+3&nbsp;°C ou plus</strong>
+        au-dessus de la moyenne : c'est ce que Bordeaux Métropole appelle un <strong>îlot de chaleur</strong>.
       </p>
       <p>
-        Mais un danger n'est pas encore un risque. Les spécialistes le décomposent en trois termes&nbsp;: l'<strong>aléa</strong>{" "}
-        (la crue, la vague de chaleur), l'<strong>enjeu</strong> (les personnes, logements, écoles qui s'y trouvent) et
-        la <strong>vulnérabilité</strong> (la capacité de chacun à y faire face).
+        Une zone chaude n'est pas encore un risque. Pour le mesurer, on croise trois termes&nbsp;: l'<strong>aléa</strong>{" "}
+        (la chaleur), l'<strong>enjeu</strong> (les habitants qui y vivent) et la <strong>vulnérabilité</strong> (ceux qui
+        auront le plus de mal à y faire face).
       </p>
     </div>
     <figure data-revele class="mt-12 overflow-hidden rounded-2xl border border-filet bg-voile">
@@ -166,63 +174,68 @@ const gestes = [
   </Chapitre>
 
   <!-- 02 · EXPLORATION -->
-  <!-- TITRE PORTEUR : à remplacer par le constat de la carte -->
-  <Chapitre id="exploration" numero="02" etape="Exploration" titre="Où vit-on le plus exposé ?">
+  <Chapitre id="exploration" numero="02" etape="Exploration" titre={`${Math.round(ref)} % des habitants vivent en îlot de chaleur, mais la part va de ${Math.round(tri.at(-1).part_ind)} % à ${Math.round(tri[0].part_ind)} % selon la commune`}>
     <div data-revele class="texte mt-8 max-w-2xl space-y-5">
       <p>
-        Compter les habitants exposés avantagerait mécaniquement les grandes communes : Bordeaux aura toujours plus de
+        Compter les habitants avantagerait mécaniquement les grandes communes : Bordeaux aura toujours plus de
         monde concerné qu'Ambès. La carte montre donc une <strong>part</strong> : sur 100 habitants de la commune,
-        combien vivent dans une zone exposée.
+        combien vivent dans un îlot de chaleur (une zone à +3&nbsp;°C ou plus au-dessus de la moyenne de la métropole,
+        le 11 juillet 2022).
       </p>
     </div>
     <PlotFigure
       id="v2-carte"
       numero="Fig. 1"
-      titre="Part de la population exposée, commune par commune"
-      sousTitre="En % de la population municipale. Plus la couleur est claire et chaude, plus la part d'habitants exposés est élevée."
+      titre="Part des habitants vivant en îlot de chaleur, commune par commune"
+      sousTitre="En % des habitants de la commune, en 5 classes de 20 points. Plus la couleur est rouge et foncée, plus la part est élevée."
       consigne="Survolez une commune pour lire sa valeur, cliquez pour ouvrir sa fiche"
       interactif
       source={SOURCE}
-      alt="Carte des 28 communes de Bordeaux Métropole, colorées en cinq classes, du brun sombre (part faible) au jaune clair (part forte), selon la part de leur population exposée. Chaque commune est un lien vers sa fiche. Les valeurs fortes et faibles seront décrites une fois les données définitives intégrées."
-      render={(document) => carteTaux(contours, indicateur, { document, lien: (code) => `/communes/${code}/` })}
+      alt={`Carte des 28 communes de Bordeaux Métropole, colorées en cinq classes, du jaune clair (moins de 20 %) au rouge foncé (plus de 80 %), selon la part de leurs habitants vivant en îlot de chaleur. Les plus exposées sont ${tri[0].commune} (${Math.round(tri[0].part_ind)} %), ${tri[1].commune} et ${tri[2].commune} ; les moins exposées ${tri.at(-1).commune} (${Math.round(tri.at(-1).part_ind)} %) et ${tri.at(-2).commune}. Métropole entière : ${Math.round(ref)} %. Chaque commune est un lien vers sa fiche.`}
+      render={(document) => carteTaux(contours, communes, { document, lien: (code) => `/communes/${code}/` })}
     />
   </Chapitre>
 
-  <!-- 03 · RÉVÉLATION -->
-  <!-- TITRE PORTEUR : à remplacer par le constat qui surprend -->
-  <Chapitre id="revelation" numero="03" etape="Révélation" titre="Quelles communes dépassent la moyenne ?">
-    <div data-revele class="texte mt-8 max-w-2xl space-y-5">
-      <p>
-        Classées de la plus à la moins exposée, les communes se lisent par rapport à une référence : le taux de
-        l'ensemble de la métropole (ligne pointillée), calculé sur tous ses habitants.
-      </p>
-    </div>
-    <PlotFigure
-      id="v3-comparaison"
-      numero="Fig. 2"
-      titre="Les 28 communes classées selon la part d'habitants exposés"
-      sousTitre={`En % de la population municipale. Ligne pointillée : taux de la métropole entière (${pct(ref)}).`}
-      source={SOURCE}
-      alt="Diagramme en barres horizontales des 28 communes classées de la plus exposée à la moins exposée, avec une ligne pointillée pour le taux métropolitain. Les communes extrêmes seront nommées une fois les données définitives intégrées."
-      defilable
-      barresSurvol
-      consigne="Survolez une barre pour la mettre en évidence"
-      render={(document) => barresCommunes(indicateur, { document })}
-    />
-  </Chapitre>
-
-  <!-- 04 · CONCLUSION -->
-  <Chapitre id="conclusion" numero="04" etape="Conclusion" titre="Et chez vous ?">
+  <!-- 03 · RÉVÉLATION : « Votre commune parmi les 28 de la métropole » (V4, interaction) -->
+  <Chapitre id="revelation" numero="03" etape="Révélation" titre="L'exposition dépend surtout de la commune où l'on vit">
     <div data-revele class="texte mt-8 max-w-2xl">
-      <p>Choisissez votre commune pour la situer par rapport au reste de la métropole.</p>
+      <p>
+        Choisissez votre commune pour la situer parmi les 28 de la métropole. La ligne pointillée donne le taux de toute
+        la métropole ({pct(ref)}), calculé sur tous ses habitants et non comme la moyenne des 28 taux.
+      </p>
     </div>
 
     <div class="mt-8">
       <ExplorateurCommune source={SOURCE} />
     </div>
+  </Chapitre>
+
+  <!-- 04 · CONCLUSION : les 80 ans et plus face à l'ensemble des habitants (V3 du notebook) -->
+  <Chapitre id="conclusion" numero="04" etape="Conclusion" titre="Les 80 ans et plus ne sont pas plus exposés dans l'ensemble, mais les ménages pauvres le sont davantage">
+    <div data-revele class="texte mt-8 max-w-2xl">
+      <p>
+        Les personnes âgées sont parmi les plus fragiles face à la chaleur. Pour chaque commune, on compare la part des
+        80 ans et plus vivant en îlot de chaleur à celle de l'ensemble des habitants. Sur toute la métropole :
+        <strong>{pct(part80Metro)}</strong> des 80 ans et plus, contre <strong>{pct(ref)}</strong> de l'ensemble des habitants.
+        L'écart change de sens selon la commune. Les ménages pauvres, eux, sont plus souvent en îlot de chaleur que
+        l'ensemble des ménages : <strong>{pct(partPauvresMetro)}</strong> contre <strong>{pct(partMenagesMetro)}</strong>.
+      </p>
+    </div>
+    <PlotFigure
+      id="v3-comparaison80"
+      numero="Fig. 3"
+      titre={`Dans l'ensemble, les 80 ans et plus ne sont pas plus exposés que les autres (${Math.round(part80Metro)} % contre ${Math.round(ref)} %), mais l'écart change d'une commune à l'autre`}
+      sousTitre={`Part vivant en îlot de chaleur, par commune : tous les habitants (gris) et 80 ans et plus (orange) · 11 juillet 2022. Sur toute la métropole : ${pct(part80Metro)} des 80 ans et plus, contre ${pct(ref)} de l'ensemble.`}
+      source={SOURCE}
+      alt={`Barres groupées : pour chacune des 28 communes, la part de tous les habitants (gris) et celle des 80 ans et plus (orange) vivant en îlot de chaleur, communes classées de la plus à la moins exposée chez les 80 ans et plus. Sur toute la métropole, les deux parts sont proches (${pct(part80Metro)} contre ${pct(ref)}). Les 80 ans et plus sont plus exposés que l'ensemble dans ${nb80PlusExposes} communes sur 28 ; l'écart va de ${ecarts.at(-1).ecart_80p.toLocaleString("fr-FR")} points (${ecarts.at(-1).commune}) à +${ecarts[0].ecart_80p.toLocaleString("fr-FR")} points (${ecarts[0].commune}). Dans les petites communes, quelques personnes suffisent à faire varier la part.`}
+      defilable
+      barresSurvol
+      consigne="Survolez une barre pour voir le nombre de personnes concernées"
+      render={(document) => comparaison80(communes, { document })}
+    />
 
     <div class="mt-20">
-      <h3 data-revele class="condense text-3xl font-extrabold sm:text-4xl">Se préparer, concrètement</h3>
+      <h3 data-revele class="condense text-3xl font-extrabold sm:text-4xl">Se préparer à la prochaine canicule</h3>
       <ol class="mt-8 grid gap-4 sm:grid-cols-3">
         {
           gestes.map((g, i) => (

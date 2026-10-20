@@ -4,14 +4,14 @@
 // signalé comme tel sous la scène. Sans bibliothèque 3D (léger, rapide) : SVG + transformations CSS.
 // Interactions : la scène suit légèrement la souris ; chaque commune est un lien vers sa fiche.
 import { geoMercator, geoPath, geoCentroid } from "d3-geo";
-import { contours } from "../data/index.js";
+import contours from "../assets/communes-contours.json";
 
 const T = 800; // côté du plan, en unités SVG
 const projection = geoMercator().fitExtent([[40, 40], [T - 40, T - 40]], contours as any);
 const chemin = geoPath(projection);
 const formes = (contours as any).features.map((f: any) => {
   const [cx, cy] = projection(geoCentroid(f)) as [number, number];
-  return { code: f.properties.code, nom: f.properties.nom, d: chemin(f) as string, cx: +cx.toFixed(1), cy: +cy.toFixed(1) };
+  return { code: f.properties.insee, nom: f.properties.nom, d: chemin(f) as string, cx: +cx.toFixed(1), cy: +cy.toFixed(1) };
 });
 const epaisseur = [16, 12, 8, 4]; // couches empilées sous la carte : effet de relief
 ---
@@ -69,13 +69,13 @@ const epaisseur = [16, 12, 8, 4]; // couches empilées sous la carte : effet de 
   }
   .plan {
     --rx: 56deg;
-    --rz: -22deg;
+    --rz: -18deg;
     transform-style: preserve-3d;
     transform: rotateX(var(--rx)) rotateZ(var(--rz));
     will-change: transform;
   }
   .soleil {
-    width: 9%;
+    width: 11%;
     aspect-ratio: 1;
     transform-style: preserve-3d;
   }
@@ -128,17 +128,19 @@ const epaisseur = [16, 12, 8, 4]; // couches empilées sous la carte : effet de 
     function dessiner(t: number) {
       // Course du soleil : d'est (droite) en ouest (gauche), en arc au-dessus du plan
       const jour = Math.sin(Math.PI * t); // 0 à l'aube, 1 à midi, 0 au couchant
-      const sx = T * (1.05 - 1.1 * t);
-      const sy = T * (0.62 - 0.3 * jour);
-      const hauteur = 60 + 340 * jour; // en px au-dessus du plan
+      const sx = T * (0.95 - 1.1 * t); // décalé vers la gauche
+      const sy = T * (0.6 - 0.12 * jour);
+      // Hauteur au-dessus du plan, en proportion de la taille de la scène :
+      // assez haut pour flotter au-dessus de la carte, assez bas pour rester dans le cadre
+      const hauteur = (0.12 + 0.28 * jour) * plan.clientWidth;
       const echelle = plan.clientWidth / T;
 
       soleil.style.transform = `translate3d(${sx * echelle}px, ${sy * echelle}px, ${hauteur}px) translate(-50%, -50%)`;
-      soleil.style.opacity = String(Math.min(1, 0.25 + jour * 1.2));
+      soleil.style.opacity = String(Math.min(1, 0.55 + jour));
       tache.setAttribute("cx", sx.toFixed(1));
       tache.setAttribute("cy", sy.toFixed(1));
       tache.setAttribute("opacity", jour.toFixed(2));
-      lueur.style.background = `radial-gradient(circle at ${(sx / T) * 100}% 40%, rgba(243,146,55,${0.1 + 0.22 * jour}), transparent 60%)`;
+      lueur.style.background = `radial-gradient(circle at ${(sx / T) * 100}% 40%, rgba(243,146,55,${0.1 + 0.18 * jour}), transparent 60%)`;
 
       for (const c of communes) {
         const d = Math.hypot(c.x - sx, c.y - sy);

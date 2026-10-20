@@ -49,6 +49,8 @@
 @layer base {
   html {
     @apply bg-papier text-encre;
+    /* Les lueurs décoratives peuvent déborder de la colonne sans créer de défilement horizontal */
+    overflow-x: clip;
     color-scheme: dark;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -147,7 +149,7 @@ figure svg {
 }
 
 /* Diagrammes en barres : la barre survolée reste orange, les autres passent en gris.
-   Couleurs reprises de src/lib/palette.js (barre = #f39237, neutre = #39414c). */
+   Couleurs reprises de src/lib/palette.js (barre = #fd8d3c, neutre = #39414c). */
 .barres-survol g[aria-label="bar"] rect {
   transition: fill 0.2s ease;
 }
@@ -155,5 +157,17 @@ figure svg {
   fill: #39414c;
 }
 .barres-survol svg:has(g[aria-label="bar"] rect:hover) g[aria-label="bar"] rect:hover {
-  fill: #f39237;
+  fill: #fd8d3c;
+}
+
+/* Légendes de Plot (pastilles et dégradé) : plus grandes que les 10 px par défaut */
+figure [class*="-swatches"] {
+  font-size: 14px !important;
+}
+figure [class*="-swatch"] > svg {
+  width: 16px;
+  height: 16px;
+}
+figure svg[class*="-ramp"] {
+  font-size: 13px;
 }

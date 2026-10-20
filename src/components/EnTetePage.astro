@@ -6,7 +6,7 @@ interface Props {
 const { surtitre, titre } = Astro.props;
 ---
 
-<header class="relative isolate overflow-x-clip border-b border-filet py-14 sm:py-20">
+<header class="relative isolate border-b border-filet py-14 sm:py-20">
   <div class="pointer-events-none absolute -top-24 -left-40 -z-10 size-[36rem] rounded-full bg-cobalt/10 blur-3xl" aria-hidden="true"></div>
   <slot name="avant" />
   <p class="surtitre animate-monte text-cobalt">{surtitre}</p>

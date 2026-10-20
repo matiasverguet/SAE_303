@@ -4,7 +4,20 @@ import EnTetePage from "../components/EnTetePage.astro";
 import ACompleter from "../components/ACompleter.astro";
 import { site } from "../site.config.js";
 import { sources } from "../data/sources.js";
-import { telechargements } from "../data/index.js";
+import communes from "../assets/communes.json";
+import { pct, tauxMetropole } from "../lib/charts.js";
+
+const ref = tauxMetropole(communes);
+const moyenneSimple = communes.reduce((s, d) => s + d.part_ind, 0) / communes.length;
+// Fichier téléchargeable : l'export du notebook tel quel (généré par src/pages/donnees/[fichier].js)
+const telechargements = [
+  {
+    id: "communes-ilots-de-chaleur",
+    titre: "Habitants en îlot de chaleur, par commune",
+    description: "Export du notebook, une ligne par commune : habitants, 80 ans et plus, ménages et ménages pauvres, au total et en îlot de chaleur, avec les parts (%) et les écarts (points).",
+    donnees: communes,
+  },
+];
 
 // Une ligne par visualisation : pourquoi cette route d'export ?
 const routes = [
@@ -14,19 +27,19 @@ const routes = [
     pourquoi: "La carte est la même pour tout le monde : un SVG statique suffit, aucun JavaScript à charger.",
   },
   {
-    viz: "Fig. 2 · Classement des communes",
-    route: "A — au build",
-    pourquoi: "Même graphique pour tous les lecteurs ; il s'affiche immédiatement, sans script.",
-  },
-  {
-    viz: "Fig. 3 · « Ma commune est-elle plus exposée ? »",
+    viz: "Fig. 2 · « Ma commune est-elle plus exposée ? »",
     route: "B — chez le lecteur",
     pourquoi: "Le graphique change selon la commune choisie : il doit bouger chez le lecteur. Un premier rendu est fait au build pour rester lisible sans JavaScript.",
   },
   {
+    viz: "Fig. 3 · 80 ans et plus / tous les habitants",
+    route: "A — au build",
+    pourquoi: "Même graphique pour tous les lecteurs ; il s'affiche immédiatement, sans script.",
+  },
+  {
     viz: "Fiches communes",
     route: "C — une page par valeur",
-    pourquoi: "28 valeurs seulement : une page statique par commune, partageable et indexable, sans calcul chez le lecteur.",
+    pourquoi: "28 valeurs seulement : une page statique par commune (getStaticPaths), partageable et indexable, sans calcul chez le lecteur.",
   },
 ];
 
@@ -43,7 +56,7 @@ const sections = [
   <EnTetePage surtitre="Transparence" titre="Méthode">
     <p>
       Tout ce qui est publié ici peut être vérifié : d'où viennent les données, ce que nous en avons fait, et ce
-      qu'elles ne disent pas.
+      qu'elles ne disent pas. Le détail des calculs et des contrôles est dans le <a href={site.notebook}>notebook Observable</a>.
     </p>
   </EnTetePage>
 
@@ -80,19 +93,19 @@ const sections = [
     <ol class="texte mt-6 space-y-4">
       <li class="grid grid-cols-[2.5rem_1fr]">
         <span class="font-sans font-bold text-cobalt">01</span>
-        <span>Filtrage sur les 28 communes de Bordeaux Métropole (code EPCI 243300316).</span>
+        <span>Îlots de chaleur exportés déjà filtrés depuis le datahub de Bordeaux Métropole : référence « moyenne de la métropole » (BM), relevé du 11 juillet 2022, zones à +3&nbsp;°C ou plus.</span>
       </li>
       <li class="grid grid-cols-[2.5rem_1fr]">
         <span class="font-sans font-bold text-cobalt">02</span>
-        <span>Contours communaux simplifiés avec mapshaper (12&nbsp;% des points conservés) : le fichier passe de 167&nbsp;Ko à 24&nbsp;Ko.</span>
+        <span>Fichier Insee national (2&nbsp;287&nbsp;884 carreaux, 454&nbsp;Mo) réduit aux 6&nbsp;751 carreaux des 28 communes, avec la position du centre de chaque carreau calculée à partir de son identifiant.</span>
       </li>
       <li class="grid grid-cols-[2.5rem_1fr]">
         <span class="font-sans font-bold text-cobalt">03</span>
-        <span>Jointures par code INSEE : <ACompleter valeur="TODO nombre de lignes sans correspondance et pourquoi" /></span>
+        <span>Chaque carreau est rattaché à la commune qui contient son centre (877 carreaux sont à cheval sur plusieurs communes). 125 carreaux, soit 3&nbsp;838 habitants (0,5&nbsp;%), ont leur centre hors de la métropole : ils sont retirés. Un carreau est « en îlot de chaleur » si son centre tombe dans une zone à +3&nbsp;°C ou plus.</span>
       </li>
       <li class="grid grid-cols-[2.5rem_1fr]">
         <span class="font-sans font-bold text-cobalt">04</span>
-        <span>Calcul de l'indicateur (numérateur / dénominateur), arrondi à deux décimales : <ACompleter valeur="TODO détail du calcul" /></span>
+        <span>Par commune : habitants en îlot de chaleur ÷ habitants de la commune (Insee, Filosofi 2019, même source en haut et en bas). Même calcul pour les 80 ans et plus et pour les ménages pauvres. Arrondi à deux décimales à l'export. Contours simplifiés avec mapshaper (3&nbsp;% des points, 25&nbsp;Ko).</span>
       </li>
     </ol>
     <p class="mt-6">
@@ -104,16 +117,16 @@ const sections = [
     <h2 id="h-choix" class="condense text-4xl font-extrabold">Choix de représentation</h2>
     <div class="texte mt-6 max-w-3xl space-y-4">
       <p>
-        <strong>Une part, pas un nombre.</strong> Compter les habitants exposés avantagerait toujours les communes les plus
-        peuplées. Chaque commune est donc décrite par la part de sa population exposée.
+        <strong>Une part, pas un nombre.</strong> Compter les habitants avantagerait toujours les communes les plus
+        peuplées. Chaque commune est donc décrite par la part de ses habitants vivant en îlot de chaleur.
       </p>
       <p>
-        <strong>Une référence honnête.</strong> Le taux de la métropole est le total des personnes exposées divisé par la
-        population totale, et non la moyenne des 28 taux communaux, qui donnerait autant de poids à Saint-Vincent-de-Paul
-        (environ 1&nbsp;000 habitants) qu'à Bordeaux (près de 270&nbsp;000).
+        <strong>Une référence honnête.</strong> Le taux de la métropole ({pct(ref)}) est le total des habitants en îlot de
+        chaleur divisé par le total des habitants, et non la moyenne des 28 taux communaux ({pct(moyenneSimple)}), qui
+        donnerait autant de poids à Saint-Vincent-de-Paul (927 habitants) qu'à Bordeaux (230&nbsp;202).
       </p>
       <p>
-        <strong>Cinq classes de couleur.</strong> Sur la carte, des tranches plutôt qu'un dégradé continu, pour qu'on puisse
+        <strong>Cinq classes de couleur.</strong> Sur la carte, des tranches de 20 points plutôt qu'un dégradé continu, pour qu'on puisse
         dire « ma commune est dans la tranche la plus haute ». Les orangés sont réservés aux données ; l'interface n'en
         utilise jamais.
       </p>
@@ -147,22 +160,38 @@ const sections = [
     <h2 id="h-limites" class="condense text-4xl font-extrabold">Limites et biais</h2>
     <ul class="texte mt-6 space-y-4">
       <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
-        <strong>L'échelle communale lisse les écarts.</strong> Une part par commune masque les différences entre quartiers
-        d'une même commune.
+        <strong>La chaleur du sol, pas de l'air, et un seul jour.</strong> Le satellite mesure la température des toits,
+        des routes et des sols le 11 juillet 2022 : ce n'est ni la chaleur ressentie, ni une moyenne de l'été.
       </li>
       <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
-        <strong>Être exposé n'est pas être vulnérable.</strong> Habiter en zone d'aléa ne dit rien de la capacité de chacun à y
-        faire face (âge, logement, revenus).
+        <strong>Une référence qui inclut forêts et champs.</strong> « Îlot de chaleur » veut dire « plus chaud que la
+        moyenne du territoire » : environ 31&nbsp;% de la surface de la métropole ressort à +3&nbsp;°C ou plus.
       </li>
       <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
-        <strong>Ce qui manque.</strong> <ACompleter valeur="TODO données absentes, dates différentes entre sources…" />
+        <strong>La méthode du centre.</strong> Seules 928 zones chaudes sur 9&nbsp;697 contiennent le centre d'un carreau.
+        L'erreur joue dans les deux sens (petites zones oubliées, carreaux à moitié chauds comptés en entier) : les parts
+        sont des ordres de grandeur.
+      </li>
+      <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
+        <strong>Des habitants absents.</strong> Filosofi (2019) compte environ 768&nbsp;000 habitants, contre environ
+        854&nbsp;000 dans la population officielle : il ne compte que les ménages en logement ordinaire. Les résidents
+        d'EHPAD, les étudiants en résidence et les sans-abri manquent, donc les 80 ans et plus les plus dépendants aussi.
+      </li>
+      <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
+        <strong>Les petits effectifs et le secret statistique.</strong> 2&nbsp;074 carreaux ont des valeurs estimées par
+        l'Insee (environ 3&nbsp;% des habitants). Dans les petites communes, quelques personnes suffisent à faire varier une
+        part de plusieurs points.
+      </li>
+      <li class="rounded-r-xl border-l-[3px] border-cobalt bg-voile py-3 pr-4 pl-4">
+        <strong>Un constat, pas une explication.</strong> On montre où vivent les gens par rapport aux îlots de chaleur ;
+        on n'avance aucune cause.
       </li>
     </ul>
   </section>
 
   <section id="telecharger" data-revele aria-labelledby="h-telecharger" class="mt-16 scroll-mt-24">
     <h2 id="h-telecharger" class="condense text-4xl font-extrabold">Télécharger les données du site</h2>
-    <p class="mt-3 max-w-2xl text-gris">Exactement les fichiers utilisés par les graphiques, générés à chaque mise à jour du site.</p>
+    <p class="mt-3 max-w-2xl text-gris">Exactement le fichier utilisé par les graphiques : l'export du notebook, une ligne par commune. Aucun fichier brut du défi n'est publié.</p>
     <ul class="mt-6 overflow-hidden rounded-2xl border border-filet bg-voile">
       {
         telechargements.map((t) => (

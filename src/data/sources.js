@@ -2,22 +2,30 @@
 // Ne rien publier qui n'a pas été vérifié dans la source (date, licence, millésime).
 export const sources = [
   {
-    nom: "Découpage administratif — communes de Bordeaux Métropole (contours et population)",
-    producteur: "IGN / INSEE, via l'API Découpage administratif (geo.api.gouv.fr)",
-    url: "https://geo.api.gouv.fr/decoupage-administratif",
-    millesime: "TODO : vérifier le millésime de population servi par l'API",
-    consulte: "14 octobre 2026",
-    licence: "Licence Ouverte / Etalab 2.0",
-    usage: "Liste des 28 communes (EPCI 243300316), contours simplifiés pour la carte, population municipale (dénominateur).",
+    nom: "Îlot de chaleur ou de fraîcheur urbain basé sur l'analyse des températures de surface de 2022",
+    producteur: "Bordeaux Métropole (datahub, jeu ri_icu_ifu_s)",
+    url: "https://datahub.bordeaux-metropole.fr/explore/dataset/ri_icu_ifu_s/information/",
+    millesime: "Relevé satellite du 11 juillet 2022",
+    consulte: "19 octobre 2026",
+    licence: "Licence Ouverte",
+    usage: "L'aléa. Téléchargé déjà filtré : écart à la moyenne de toute la métropole (BM), relevé du 11 juillet 2022, zones à +3 °C ou plus (9 697 zones).",
   },
-  // Modèle pour chaque jeu de données ajouté depuis le notebook :
-  // {
-  //   nom: "Titre exact du jeu de données",
-  //   producteur: "…",
-  //   url: "https://www.data.gouv.fr/…",
-  //   millesime: "…",
-  //   consulte: "…",
-  //   licence: "Licence Ouverte / Etalab 2.0",
-  //   usage: "À quoi il sert dans le récit (numérateur, filtre, carte…).",
-  // },
+  {
+    nom: "Revenus, pauvreté et niveau de vie — Données carroyées (carreaux de 200 m)",
+    producteur: "Insee, dispositif Filosofi",
+    url: "https://www.insee.fr/fr/statistiques/7655475?sommaire=7655515",
+    millesime: "2019",
+    consulte: "19 octobre 2026",
+    licence: "Licence Ouverte 2.0",
+    usage: "L'enjeu et la vulnérabilité : habitants, 80 ans et plus, ménages et ménages pauvres par carreau. Réduit des 2 287 884 carreaux de France aux 6 751 des 28 communes.",
+  },
+  {
+    nom: "Délimitation de Bordeaux Métropole et des communes membres",
+    producteur: "Bordeaux Métropole (datahub, jeu fv_commu_s)",
+    url: "https://datahub.bordeaux-metropole.fr/explore/dataset/fv_commu_s/",
+    millesime: "Contours en vigueur au téléchargement",
+    consulte: "19 octobre 2026",
+    licence: "Licence Ouverte",
+    usage: "Le découpage : rattacher chaque carreau à sa commune et dessiner les cartes (contours simplifiés à 3 % des points, 25 Ko).",
+  },
 ];

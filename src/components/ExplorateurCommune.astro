@@ -5,14 +5,14 @@
 import { JSDOM } from "jsdom";
 import Figure from "./Figure.astro";
 import { barresCommunes } from "../lib/charts.js";
-import { indicateur } from "../data/index.js";
+import communes from "../assets/communes.json";
 
 interface Props {
   source: string;
 }
 const { source } = Astro.props;
-const options = [...indicateur].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
-const initial = barresCommunes(indicateur, { document: new JSDOM("").window.document });
+const options = [...communes].sort((a, b) => a.commune.localeCompare(b.commune, "fr"));
+const initial = barresCommunes(communes, { document: new JSDOM("").window.document });
 ---
 
 <div data-explorateur>
@@ -28,7 +28,7 @@ const initial = barresCommunes(indicateur, { document: new JSDOM("").window.docu
           class="w-full cursor-pointer appearance-none rounded-xl border border-filet bg-papier py-3 pr-10 pl-4 text-base font-medium text-encre transition hover:border-cobalt focus:border-cobalt focus:ring-4 focus:ring-cobalt/25 focus:outline-none"
         >
           <option value="">Choisir une commune</option>
-          {options.map((d) => <option value={d.code}>{d.nom}</option>)}
+          {options.map((d) => <option value={d.insee}>{d.commune}</option>)}
         </select>
         <svg class="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-cobalt" viewBox="0 0 16 16" aria-hidden="true">
           <path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" />
@@ -42,11 +42,11 @@ const initial = barresCommunes(indicateur, { document: new JSDOM("").window.docu
 
   <Figure
     id="v4-explorateur"
-    numero="Fig. 3"
+    numero="Fig. 2"
     titre="Votre commune parmi les 28 de la métropole"
-    sousTitre="Part de la population exposée, en % de la population municipale. Ligne pointillée : taux de la métropole entière."
+    sousTitre="Part des habitants vivant en îlot de chaleur (+3 °C ou plus au-dessus de la moyenne de la métropole, 11 juillet 2022). Pointillés : toute la métropole."
     source={source}
-    alt="Diagramme en barres horizontales classant les 28 communes de Bordeaux Métropole selon la part de leur population exposée. La commune choisie apparaît en orange, les autres en gris ; une ligne pointillée indique le taux de l'ensemble de la métropole. La phrase au-dessus du graphique donne en toutes lettres la valeur et le rang de la commune choisie."
+    alt="Diagramme en barres horizontales classant les 28 communes de Bordeaux Métropole selon la part de leurs habitants vivant en îlot de chaleur, de 95 % (Talence) à 1 % (Bouliac). La commune choisie apparaît en orange, les autres en gris ; une ligne pointillée indique le taux de l'ensemble de la métropole (69 %). La phrase au-dessus du graphique donne en toutes lettres la valeur et le rang de la commune choisie."
     route="B"
     barresSurvol
   >
@@ -58,17 +58,17 @@ const initial = barresCommunes(indicateur, { document: new JSDOM("").window.docu
 
 <script>
   import { barresCommunes, tauxMetropole, pct, nb, rangTexte } from "../lib/charts.js";
-  import { indicateur } from "../data/index.js";
+  import communes from "../assets/communes.json";
 
   const racine = document.querySelector<HTMLElement>("[data-explorateur]")!;
   const select = racine.querySelector<HTMLSelectElement>("#choix-commune")!;
   const phrase = racine.querySelector<HTMLElement>("[data-phrase]")!;
   const conteneur = racine.querySelector<HTMLElement>("[data-graphique]")!;
-  const ref = tauxMetropole(indicateur);
+  const ref = tauxMetropole(communes);
 
   function dessiner() {
     const selection = select.value || undefined;
-    const graphique = barresCommunes(indicateur, {
+    const graphique = barresCommunes(communes, {
       selection,
       width: Math.max(320, conteneur.clientWidth),
     });
@@ -78,14 +78,14 @@ const initial = barresCommunes(indicateur, { document: new JSDOM("").window.docu
     void phrase.offsetWidth; // relance l'animation
     phrase.classList.add("animate-monte");
 
-    const d = indicateur.find((c) => c.code === selection);
+    const d = communes.find((c) => c.insee === selection);
     if (!d) {
       phrase.textContent = "Choisissez une commune pour la situer parmi les 28 communes de la métropole.";
       return;
     }
-    const rang = [...indicateur].sort((a, b) => b.part - a.part).findIndex((c) => c.code === d.code) + 1;
-    const ecart = d.part > ref ? "au-dessus" : "en dessous";
-    phrase.innerHTML = `À <strong>${d.nom}</strong>, ${nb(d.exposes)} habitants sur ${nb(d.population)} sont exposés, soit <strong class="text-cobalt">${pct(d.part)}</strong> : ${ecart} du taux de la métropole (${pct(ref)}). ${rangTexte(rang)} commune sur 28. <a href="/communes/${d.code}/">Voir la fiche de ${d.nom}</a>`;
+    const rang = [...communes].sort((a, b) => b.part_ind - a.part_ind).findIndex((c) => c.insee === d.insee) + 1;
+    const ecart = d.part_ind > ref ? "au-dessus" : "en dessous";
+    phrase.innerHTML = `À <strong>${d.commune}</strong>, ${nb(d.ind_icu)} habitants sur ${nb(d.ind)} vivent en îlot de chaleur, soit <strong class="text-cobalt">${pct(d.part_ind)}</strong> : ${ecart} du taux de la métropole (${pct(ref)}). ${rangTexte(rang)} commune sur 28. Chez les 80 ans et plus : ${pct(d.part_80p)}. <a href="/communes/${d.insee}/">Voir la fiche de ${d.commune}</a>`;
   }
 
   select.addEventListener("change", dessiner);

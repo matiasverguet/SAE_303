@@ -1,5 +1,5 @@
 - URL site WEB : TODO (Netlify)
-- URL Notebook Observable : TODO
+- URL Notebook Observable : https://observablehq.com/@mmi-montbeliard/sae-303-gr-02
 - Nom : Verguet
 - Prénom : Matias
 - Nom binome : TODO
@@ -9,7 +9,7 @@ Défi Open Data University : [Prévention des risques à Bordeaux Métropole](ht
 
 # Remarques :
 
-> ⚠️ Tant que `donneesDemo: true` dans [src/site.config.js](src/site.config.js), le site affiche des **données factices** (bandeau visible sur toutes les pages).
+> Données : [src/assets/communes.json](src/assets/communes.json) est l'export du notebook Observable (partie 6, une ligne par commune), converti de CSV en JSON. Les contours viennent de Bordeaux Métropole (`fv_commu_s`), simplifiés avec mapshaper : [src/assets/communes-contours.json](src/assets/communes-contours.json).
 
 ## Structure
 
@@ -21,7 +21,8 @@ Défi Open Data University : [Prévention des risques à Bordeaux Métropole](ht
 | [src/pages/donnees/[fichier].js](src/pages/donnees/[fichier].js) | Génère au build les CSV/JSON téléchargeables à partir des mêmes fichiers que les graphiques |
 | [src/lib/charts.js](src/lib/charts.js) | Les visualisations, écrites comme au TP5 : fonctions qui reçoivent leurs données en paramètre |
 | [src/lib/palette.js](src/lib/palette.js) | Palette de **données** (distincte de la palette de charte dans [global.css](src/styles/global.css)) |
-| [src/data/](src/data/) | Données préfiltrées + [format attendu de l'export du notebook](src/data/README.md) |
+| [src/assets/](src/assets/) | Données préfiltrées (export du notebook, contours simplifiés) |
+| [src/data/sources.js](src/data/sources.js) | Les sources affichées sur la page Méthode |
 
 ## Routes d'export
 

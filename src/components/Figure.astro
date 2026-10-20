@@ -33,7 +33,7 @@ const routes = { A: "calculé à la construction du site", B: "calculé dans vot
     }
   </figcaption>
 
-  <div class:list={["text-encre", defilable && "overflow-x-auto [&_svg]:min-w-[34rem]", interactif && "carte-interactive", barresSurvol && "barres-survol"]}>
+  <div class:list={["text-encre", defilable && "overflow-x-auto [&>svg]:min-w-[34rem] [&>figure>svg]:min-w-[34rem]", interactif && "carte-interactive", barresSurvol && "barres-survol"]}>
     <slot />
   </div>
 
